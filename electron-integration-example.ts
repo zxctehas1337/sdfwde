@@ -11,7 +11,8 @@
 
 import React, { useState, useEffect } from 'react';
 
-const AUTH_SERVER_URL = 'http://localhost:3001';
+// Используйте ваш хостинг URL
+const AUTH_SERVER_URL = 'https://xolo.onrender.com';
 
 interface User {
   id: string;

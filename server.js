@@ -17,18 +17,45 @@ const users = new Map();
 
 // Middleware
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: function(origin, callback) {
+    // Разрешаем запросы без origin (например, из Electron)
+    if (!origin) return callback(null, true);
+    
+    // Разрешаем localhost для разработки
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return callback(null, true);
+    }
+    
+    // Разрешаем настроенный FRONTEND_URL
+    const allowedOrigin = process.env.FRONTEND_URL;
+    if (allowedOrigin === '*' || origin === allowedOrigin) {
+      return callback(null, true);
+    }
+    
+    // Для Electron приложений разрешаем file:// и app://
+    if (origin.startsWith('file://') || origin.startsWith('app://')) {
+      return callback(null, true);
+    }
+    
+    callback(null, true); // Разрешаем все для упрощения
+  },
   credentials: true
 }));
 
 app.use(express.json());
+
+// Настройки сессии с поддержкой HTTPS
+const isProduction = process.env.NODE_ENV === 'production';
 app.use(session({
   secret: process.env.SESSION_SECRET || 'xolo-browser-secret-key',
   resave: false,
   saveUninitialized: false,
+  proxy: isProduction, // Доверяем прокси (Render.com)
   cookie: {
-    secure: false, // В продакшене установите true с HTTPS
-    maxAge: 24 * 60 * 60 * 1000 // 24 часа
+    secure: isProduction, // true для HTTPS в продакшене
+    sameSite: isProduction ? 'none' : 'lax', // 'none' для cross-site в продакшене
+    maxAge: 24 * 60 * 60 * 1000, // 24 часа
+    httpOnly: true
   }
 }));
 
